@@ -11,8 +11,8 @@ export class ShoppingCart {
   public getArticlesGroupedById(): Map<Article, number> {
     return new Map<Article, number>(
       this.articles
+        .filter((v,i,a) => a.findIndex (t => t.getId() === v.getId()) === i)
         .sort((a, b) => a.getId() - b.getId())
-        .filter((v,i,a) => a.findIndex (t=>(t.getId() === v.getId())) === i)
         .map(article => {
           const articlesGrouped: number = this.getTotalArticlesById(article.getId())
           return [article, articlesGrouped]
