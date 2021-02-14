@@ -2,20 +2,32 @@
   <div>
     <Menubar :model="items">
       <template #end>
-        <i 
-          class="pi pi-shopping-cart p-text-secondary shopping-cart-icon"
-          @click="updateSidebarVisibility"
+        <span class="p-input-icon-left">
+          <i class="pi pi-search" />
+          <InputText
+            type="text"
+            v-model="filter"
+            placeholder="Search"
+          />
+        </span>
+        <span
+          class="shopping-cart-icon-container"
         >
-          <Badge
-            :value="`${shoppingCart.getArticles().length}`"
-            class="shopping-cart-badge p-mr-2"
+          <i 
+            class="pi pi-shopping-cart p-text-secondary shopping-cart-icon"
+            @click="updateVisibility"
           >
-          </Badge>
-        </i>
+            <Badge
+              :value="`${shoppingCart.getArticles().length}`"
+              class="shopping-cart-badge p-mr-2"
+            >
+            </Badge>
+          </i>
+        </span>
       </template>
     </Menubar>
     <Sidebar
-      v-model:visible="sidebarVisible"
+      v-model:visible="isVisible"
       :baseZIndex="1000"
       position="right"
       :showCloseIcon="false"
@@ -34,7 +46,7 @@
             <span>
               <i 
                 class="pi pi-trash p-text-secondary delete-item-icon"
-                @click="removeItem(entry[0])"
+                @click="removeArticle(entry[0])"
               />
             </span>
           </p>
@@ -49,53 +61,39 @@
 </template>
 
 <script lang="ts">
-import { ShoppingCart } from '@/domain/shopping-cart/shopping-cart'
-import { defineComponent, ref, Ref } from 'vue'
-import { getShoppingCart, removeArticle, } from '@/container'
-import { Article } from '@/domain/article/article'
-import { useToast } from 'primevue/usetoast'
+import { defineComponent } from 'vue'
+import { useRemoveArticle } from './useRemoveArticle';
+import { useUpdateSidebarVisibility } from './useUpdateSidebarVisibility';
+import { useGetShoppingCart } from './useGetShoppingCart';
+import { useGetMenu } from './useGetMenu';
+import { useFilterArticles } from './useFilterArticles';
 
 export default defineComponent({
   name: 'TopBar',
   setup() {
-    const items: Ref<object[]> = ref([])
-    const sidebarVisible: Ref<boolean> = ref(false)
-    const shoppingCart: Ref<ShoppingCart> = ref({} as any)
-    shoppingCart.value = getShoppingCart.execute()
-
-    const updateSidebarVisibility = () => {
-      sidebarVisible.value = !sidebarVisible.value;
-    }
-
-    const showToast = () => {
-      toast.add({
-        severity: 'success',
-        summary: 'Article deleted',
-        detail: 'The article has been deleted successfully!',
-        group: 'ad',
-        life: 3000
-      });
-    }
-
-    const removeItem = (article: Article) => {
-      removeArticle.execute(article);
-      showToast();
-    }
-
-    const toast = useToast();
+    const { removeArticle } = useRemoveArticle();
+    const { isVisible, updateVisibility } = useUpdateSidebarVisibility();
+    const { shoppingCart } = useGetShoppingCart();
+    const { items } = useGetMenu();
+    const { filter } = useFilterArticles();
 
     return {
       items,
       shoppingCart,
-      sidebarVisible,
-      updateSidebarVisibility,
-      removeItem
+      isVisible,
+      updateVisibility,
+      removeArticle,
+      filter
     }
   }
 })
 </script>
 
 <style lang="scss" scoped>
+  .shopping-cart-icon-container {
+    vertical-align: middle!important;
+    margin-left: 3rem;
+  }
   .shopping-cart-icon {
     cursor: pointer;
     font-size: 2rem;
@@ -112,7 +110,7 @@ export default defineComponent({
     margin-bottom: 3rem;
   }
   .article-container {
-    vertical-align: middle!important;
+    vertical-align: middle;
     font-size: 1.1rem;
     padding: 0 1rem;
     border-bottom: 1px solid gainsboro;
